@@ -1,0 +1,23 @@
+version: '3'
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - FLASK_ENV=development
+      - MARIADB_HOST=mariadb
+      - MARIADB_USER=apiuser
+      - MARIADB_PASSWORD=bA17oxUi71ZPRq
+      - MARIADB_DATABASE=lightworksapi
+      - ENCRYPTION_KEY=axKCISGtpQKqa1FxQXVtNziWiA_TF4P6yx1DpvCTPqg=
+    networks:
+      proxt_net0:
+        ipv4_address: 192.168.100.30
+
+networks:
+  proxt_net0:
+    name: proxt_net0
+    external: true
