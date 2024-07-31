@@ -6,7 +6,7 @@ services:
     volumes:
       - .:/usr/src/app
     environment:
-      FLASK_ENV: development
+      FLASK_ENV: production
       MARIADB_HOST: mariadb
       MARIADB_USER: apiuser
       MARIADB_PASSWORD: /run/secrets/db_password
