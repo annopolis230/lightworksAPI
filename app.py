@@ -7,9 +7,7 @@ import mysql.connector
 app = Flask(__name__)
 
 class UnauthorizedException(Exception):
-        def __init__(self, message, code=None):
-                super().__init__(message)
-                self.code = code
+        pass
 
 def get_secret(secret):
         with open(f'{os.getenv(secret)}') as f:
@@ -22,12 +20,12 @@ def verify_request(secret, headers):
         received_secret = headers.get('x-api-key')
         if not received_secret:
                 app.logger.warning(f'No API key provided from {headers.get("x-forwarded-for")}') 
-                raise UnauthorizedException("No API key",code=1001)
+                raise UnauthorizedException("No API key")
         else:
                 received_secret = received_secret.encode()
         if not hmac.compare_digest(received_secret, secret):
                 app.logger.warning(f'Invalid API key from {headers.get("x-forwarded-for")}')
-                raise UnauthorizedException("Invalid API key",code=1002)
+                raise UnauthorizedException("Invalid API key")
 
 def fetch_key(name):
         connection = mysql.connector.connect(
@@ -45,11 +43,20 @@ def fetch_key(name):
                 return cipher_suite.decrypt(result[0])
         return "nothing"
 
-@app.route('/place', methods=['GET', 'POST'])
-def place():
-        verify_request(fetch_key("place"), request.headers)
+@app.route('/test', methods=['GET', 'POST'])
+def test():
+        verify_request(fetch_key("key_1"), request.headers)
         if request.method == 'GET':
                 return jsonify({'success':'success'})
+
+@app.route('/group', methods=['GET'])
+def get_shout():
+        verify_request(fetch_key("key_1"), request.headers)
+        if request.method == 'GET':
+                #return fetch_key("rblx_group_key")
+                return "success"
+        else:
+                raise InvalidRequestType(f'{request.method} invalid')
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -57,7 +64,7 @@ def page_not_found(e):
 
 @app.errorhandler(UnauthorizedException)
 def unauthorized(e):
-        response = {'error': 'Resource Unauthorized', 'message': str(e), 'code': e.code}
+        response = {'error': 'Resource Unauthorized', 'message': str(e)}
         return jsonify(response), 401
 
 if __name__ == '__main__':
