@@ -3,6 +3,7 @@ from cryptography.fernet import Fernet
 import os
 import hmac
 import mysql.connector
+import requests
 
 app = Flask(__name__)
 
@@ -12,9 +13,6 @@ class UnauthorizedException(Exception):
 def get_secret(secret):
         with open(f'{os.getenv(secret)}') as f:
                 return f.read().strip()
-
-key = get_secret("ENCRYPTION_KEY").encode()
-cipher_suite = Fernet(key)
 
 def verify_request(secret, headers):
         received_secret = headers.get('x-api-key')
@@ -27,7 +25,29 @@ def verify_request(secret, headers):
                 app.logger.warning(f'Invalid API key from {headers.get("x-forwarded-for")}')
                 raise UnauthorizedException("Invalid API key")
 
+def http_get(key, uri, timeout=10):
+        headers = {'x-api-key': key}
+        try:
+                response = requests.get(str(uri), timeout=timeout, headers=headers)
+                code = response.status_code
+                response.raise_for_status()
+                data = response.json()
+                return data
+        except requests.exceptions.HTTPError as err:
+                app.logger.warning(f'HTTP error occured sending to {uri}: {err}')
+                return jsonify({'http error': str(err)}), code
+        except requests.exceptions.Timeout as err:
+                app.logger.warning(f'Timeout occured sending to {uri}: {err}')
+                return jsonify({'http error': str(err)}), code
+        except request.exceptions.RequestException as err:
+                app.logger.warning(f'An error occured sending to {uri}: {err}')
+                return jsonify({'http error': str(err)}), code
+        return None
+
 def fetch_key(name):
+        key = get_secret("ENCRYPTION_KEY").encode()
+        cipher_suite = Fernet(key)
+
         connection = mysql.connector.connect(
                 host=os.getenv("MARIADB_HOST"),
                 user=os.getenv("MARIADB_USER"),
@@ -43,28 +63,20 @@ def fetch_key(name):
                 return cipher_suite.decrypt(result[0])
         return "nothing"
 
-@app.route('/test', methods=['GET', 'POST'])
-def test():
-        verify_request(fetch_key("key_1"), request.headers)
-        if request.method == 'GET':
-                return jsonify({'success':'success'})
-
 @app.route('/group', methods=['GET'])
 def get_shout():
         verify_request(fetch_key("key_1"), request.headers)
         if request.method == 'GET':
-                #return fetch_key("rblx_group_key")
-                return "success"
-        else:
-                raise InvalidRequestType(f'{request.method} invalid')
+                return http_get(fetch_key("rblx_group_key"), 'https://apis.roblox.com/cloud/v2/groups/5038001/shout')
 
 @app.errorhandler(404)
 def page_not_found(e):
+        app.logger.warning(f'Attempt to access invalid route {request.path} by {request.headers.get("x-forwarded-for")}')
         return jsonify({'error': 'Unknown route'}), 404
 
 @app.errorhandler(UnauthorizedException)
 def unauthorized(e):
-        response = {'error': 'Resource Unauthorized', 'message': str(e)}
+        response = {'error': 'Resource Unauthorized'}
         return jsonify(response), 401
 
 if __name__ == '__main__':
