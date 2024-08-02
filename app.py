@@ -69,6 +69,11 @@ def get_shout():
         if request.method == 'GET':
                 return http_get(fetch_key("rblx_group_key"), 'https://apis.roblox.com/cloud/v2/groups/5038001/shout')
 
+@app.before_request
+def before_request():
+        if request.headers.get('x-forwarded-proto', '') == 'https':
+                request.environ['wsgi.url_scheme'] = 'https'
+
 @app.errorhandler(404)
 def page_not_found(e):
         app.logger.warning(f'Attempt to access invalid route {request.path} by {request.headers.get("x-forwarded-for")}')
