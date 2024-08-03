@@ -12,9 +12,11 @@ services:
       MARIADB_PASSWORD: /run/secrets/db_password
       MARIADB_DATABASE: lightworksapi
       ENCRYPTION_KEY: /run/secrets/encryption_key
+      REDIS_PASSWORD: /run/secrets/redis_pwd
     secrets:
       - encryption_key
       - db_password
+      - redis_pwd
     networks:
       proxt_net0:
         ipv4_address: 192.168.100.30
@@ -29,3 +31,5 @@ secrets:
     file: ../flask_secrets/encryption_key.txt
   db_password:
     file: ../flask_secrets/db_password.txt
+  redis_pwd:
+    file: ../flask_secrets/redis_pwd.txt
