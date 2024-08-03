@@ -41,8 +41,7 @@ def verify_request(secret, headers):
                 app.logger.warning(f'Invalid API key from {headers.get("x-forwarded-for")}')
                 raise UnauthorizedException("Invalid API key")
 
-def http_get(key, uri, timeout=10):
-        headers = {'x-api-key': key}
+def http_get(headers, uri, timeout=10):
         try:
                 response = requests.get(str(uri), timeout=timeout, headers=headers)
                 code = response.status_code
@@ -88,7 +87,13 @@ def fetch_key(name):
 def get_shout():
         verify_request(fetch_key("key_1"), request.headers)
         if request.method == 'GET':
-                return http_get(fetch_key("rblx_group_key"), 'https://apis.roblox.com/cloud/v2/groups/5038001/shout')
+                headers = {'x-api-key': fetch_key("rblx_group_key")}
+                return http_get(headers, 'https://apis.roblox.com/cloud/v2/groups/5038001/shout')
+
+@app.route('/status', methods=['GET'])
+@limiter.exempt
+def status():
+        return jsonify({'status': 'OK'}), 200
 
 @app.before_request
 def before_request():
