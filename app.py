@@ -9,7 +9,7 @@ import mysql.connector
 import requests
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2)
 
 class UnauthorizedException(Exception):
         pass
