@@ -3,3 +3,4 @@ Werkzeug==2.2.2
 mysql-connector-python
 cryptography
 requests
+Flask-Limiter[redis]
