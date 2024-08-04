@@ -87,13 +87,17 @@ def fetch_key(name):
 def get_shout():
         verify_request(fetch_key("key_1"), request.headers)
         if request.method == 'GET':
-                headers = {'x-api-key': fetch_key("rblx_group_key")}
+                headers = {'x-api-key': fetch_key("rblx_group_api")}
                 return http_get(headers, 'https://apis.roblox.com/cloud/v2/groups/5038001/shout')
 
 @app.route('/status', methods=['GET'])
 @limiter.exempt
 def status():
         return jsonify({'status': 'OK'}), 200
+
+@app.route('/test', methods=['GET'])
+def test():
+        return fetch_key("rblx_group_api")
 
 @app.before_request
 def before_request():
